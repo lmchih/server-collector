@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 	"context"
 	"os"
+	"reflect"
 	// "strings"
 )
 
@@ -17,8 +18,8 @@ import (
 // Notes: For generic and decoupling purpose, you might always want to inject these from the environment vaiables
 // or some kinds of configuration yaml
 const (
-	// MY_ACCESS_TOKEN your github your github Personal Access Token
-    MyAccessToken = "592636546d4bab3ff388bc79c908e24b9440df93"
+	// MY_ACCESS_TOKEN your github Personal Access Token
+    MyAccessToken = "8992518d8cda5290ba387739837588662d6806e4"
     // TARGET_REPO_URL the target repo url you want to monitor
 	TargetRepoURL = "https://github.com/lmchih/server-collector"
     // TARGET_BRANCH the target branch
@@ -36,11 +37,9 @@ var (
 
 
 func checkCommitTime() {
-	flag.Parse()
 
+	flag.Parse()
 	log.Printf("TargetRepoURL: %v\nTargetBranch: %s\n", TargetRepoURL, TargetBranch)
-	now := time.Now().UTC()
-	fmt.Printf("Now: %v\n", now)
 
 	// TODO: Get the latest commit
 	ctx = context.Background()
@@ -66,11 +65,22 @@ func checkCommitTime() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("%v\n", commitInfo[0])
+	var lastCommit = commitInfo[0]
+	// fmt.Printf("lastCommit: %v\n", reflect.TypeOf(lastCommit))
+	var lastCommitDate = *lastCommit.Commit.Committer.Date
+	fmt.Printf("lastDCommitDate: %v\n", reflect.TypeOf(lastCommitDate))
 	
+	// compare to commit time with now
+	now := time.Now().UTC()
+	fmt.Printf("Now: %v\n", now)
+	since := time.Since(lastCommitDate)
+	fmt.Printf("since: %v\n", since)
+	// convert since to days
+	days := int(since.Hours() / 24)
+	fmt.Printf("days: %d\n", days)
 
-	// TODO: compare to commit time with now
-
-	// TODO: if older than three days, terminate the server.
-	terminate()
+	// if older than three days, terminate the server.
+	if days >= 3 {
+		terminate()
+	}
 }
