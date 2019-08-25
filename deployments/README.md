@@ -1,3 +1,3 @@
-# /deployments
+# `/deployments`
 
 For your Kubernetes cluster
