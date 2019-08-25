@@ -40,5 +40,5 @@ data:
   UNUSED_DAYS: "3"
 kind: ConfigMap
 metadata:
-  name: server-collector
+  name: server-collector-conf
 ---
