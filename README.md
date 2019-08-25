@@ -3,10 +3,9 @@ An application smartly turn off your unused machines
 
 ## Go 1.11 Modules
 
-Please upgrade your go version to v1.11+ so that you can use go module. You have to set `GO111MODULE=on`. For more information, please see [golang/go](_https://github.com/golang/go/wiki/Modules_)
+Please upgrade your go version to v1.11+ so that you can use go module. You have to set `GO111MODULE=on`. For more information, please see [golang/go](https://github.com/golang/go/wiki/Modules)
 ```sh
     $ export GO111MODULE=on
-    $ env
 ```
 
 
@@ -14,11 +13,11 @@ Please upgrade your go version to v1.11+ so that you can use go module. You have
 
 Executes the following commands right under the root directory of this repository:
 ```sh
-    $ go build -o server-collector cmd/main.go
+    $ go build -o server-collector cmd/server-collector
 
-# or
+    # or
 
-    $ go build -o server-collector github.com/lmchih/server-collector/cmd
+    $ go build -o server-collector github.com/lmchih/server-collector/cmd/server-collector
 ```
 
 They both generate the executable binary
@@ -36,7 +35,7 @@ To build an image, use Dockerfile at the directory:
 
 You can run like this:
 ```sh
-    $ docker run -d --name server-collector -p 8081:8081 dockerhub.com/lmchih/server-collector
+    $ docker run -d --name server-collector dockerhub.com/lmchih/server-collector
 ```
 
 

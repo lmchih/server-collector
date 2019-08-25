@@ -1,0 +1,44 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: server-collector
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: server-collector
+    spec:
+      containers:
+      - name: server-collector
+        image: rickming/server-collector:0.0.1
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: server-collector-conf
+        volumeMounts:
+        - mountPath: /var/run
+          name: shutdown_signal
+      volumes:
+      - name: shutdown_signal
+        projected:
+          defaultMode: 420
+---
+apiVersion: v1
+data:
+  TARGET_SERVER: "127.0.0.1"
+  SOURCE_OWNER: "lmchih"
+  SOURCE_REPO: "server-collector"
+  SOURCE_BRANCH: "master"
+  UNUSED_DAYS: "3"
+kind: ConfigMap
+metadata:
+  name: server-collector
+---
