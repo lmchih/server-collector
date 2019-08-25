@@ -15,22 +15,23 @@ import (
 // the conatainer and the host machine.
 func terminate(target string) {
 	fmt.Printf("target: %s\n", target)
-	if target == "127.0.0.1" {
+	if target == TARGET_SERVER {
 		// run locally
 		fmt.Println("Hey I am going to turn you off! Server.")
-		// b, err := ioutil.ReadFile("C:\\shutdown_signal")	// windows
+		// b, err := ioutil.ReadFile("C:\\shutdown_signal") // windows
 		b, err := ioutil.ReadFile("/var/run/shutdown_signal")
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("shutdown_signal: %s", string(b))
+		fmt.Printf("shutdown_signal: %s\n", string(b))
 
-		signal := []byte("false")
+		signal := []byte("true")
 		// err = ioutil.WriteFile("C:\\shutdown_signal", signal, 0644)
 		err = ioutil.WriteFile("/var/run/shutdown_signal", signal, 0644)
 		if err != nil {
 			panic(err)
 		}
+		fmt.Printf("successuly write signal to %s\n", string(signal))
 	} else {
 		// TODO: turn off remote server
 		// cmd := exec.Command("ssh", "-t", "-t", "-p", "22", "{{hostip}}", "init 6")
