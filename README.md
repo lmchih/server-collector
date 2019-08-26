@@ -17,14 +17,10 @@ export GO111MODULE=on
 Executes the following commands right under the root directory of this repository:
 
 ```sh
-go build -o server-collector cmd/server-collector
-
-# or
-
-go build -o server-collector github.com/lmchih/server-collector/cmd/server-collector
+go build -o server-collector cmd/server-collector/binary
 ```
 
-They both generate the executable named `server-collector`
+This generates an executable named `server-collector`
 
 ### image
 
@@ -35,6 +31,15 @@ docker build -f build/package/Dockerfile -t {your_image_path_with_tags} .
 ```
 
 ## Usage
+
+## Run as binary
+
+```sh
+cp ./server-collector /usr/local/bin/
+server-collector &
+```
+
+## Run with container
 
 ### Step 1: start the container
 
@@ -52,7 +57,9 @@ docker run -v C:\\shutdown_signal:/var/run/shutdown_signal -e SOURCE_REPO=server
 ```sh
 cd scripts
 chmod +x check-shutdown-signal.sh
-sh ./check-shutdown-signal.sh
+
+# Add sudo before sh command if you are not superuser
+sh ./check-shutdown-signal.sh &
 ```
 
 ## Contact

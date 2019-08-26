@@ -13,6 +13,6 @@ while sleep 30; do
   signal=$(cat /var/run/shutdown_signal)
   if [ "$signal" == "true" ]; then 
     echo "done" > /var/run/shutdown_signal
-    shutdown -h now
+    sudo shutdown -h now
   fi
 done
