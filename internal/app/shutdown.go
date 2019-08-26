@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/exec"
 	"runtime"
+	"time"
 )
 
 // Container solution
@@ -15,7 +16,7 @@ import (
 // the conatainer and the host machine.
 func terminate(target string) {
 	fmt.Printf("target: %s\n", target)
-	if target == TARGET_SERVER {
+	if target == TargetServer {
 		// run locally
 		fmt.Println("Hey I am going to turn you off! Server.")
 		// b, err := ioutil.ReadFile("C:\\shutdown_signal") // windows
@@ -31,7 +32,7 @@ func terminate(target string) {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("successuly write signal to %s\n", string(signal))
+		fmt.Printf("successfully write signal to %s\n", string(signal))
 	} else {
 		// TODO: turn off remote server
 		// cmd := exec.Command("ssh", "-t", "-t", "-p", "22", "{{hostip}}", "init 6")
@@ -46,11 +47,18 @@ func terminate(target string) {
 
 // Binary solution
 func shutdownCommand() {
+
+	fmt.Println("The computer is going to be shutdown in 5 seconds .....")
+	time.Sleep(time.Duration(5) * time.Second)
+	fmt.Println("Bye")
 	// shutdown locally
-	cmd := exec.Command("init 6")
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("shutdown", "/s")
-	}
+	fmt.Println(runtime.GOOS)
+	cmd := exec.Command("ls", "-alh")
+	// cmd := exec.Command("init 6")
+	// cmd := exec.Command("shutdown", "-h", "now") // linux/darwin
+	// if runtime.GOOS == "windows" {
+	// 	cmd = exec.Command("shutdown", "/s")
+	// }
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

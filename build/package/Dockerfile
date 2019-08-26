@@ -13,7 +13,7 @@ COPY cmd /go/src/github.com/lmchih/server-collector/cmd
 COPY internal /go/src/github.com/lmchih/server-collector/internal
 
 # Build the Go app
-RUN env GOOS=linux GOARCH=amd64 go build -o /server-collector -v -ldflags "-s" github.com/lmchih/server-collector/cmd/server-collector
+RUN env GOOS=linux GOARCH=amd64 go build -o /server-collector -v -ldflags "-s" github.com/lmchih/server-collector/cmd/server-collector/container
 
 # To reduce the final image size, start a new stage with alpine from scratch
 FROM alpine:3.9

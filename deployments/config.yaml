@@ -1,0 +1,7 @@
+version: 0.0.1
+accessToken: "8992518d8cda5290ba387739837588662d6806e4"
+serverIP: 127.0.0.1
+sourceOwner: lmchih
+sourceRepo: server-collector
+sourceBranch: master
+unusedDays: 3
