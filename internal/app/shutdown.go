@@ -20,15 +20,20 @@ func terminate(target string) {
 		// run locally
 		fmt.Println("Hey I am going to turn you off! Server.")
 		// b, err := ioutil.ReadFile("C:\\shutdown_signal") // windows
-		b, err := ioutil.ReadFile("/var/run/shutdown_signal")
+
+		// fmt.Printf("sys.GOOS: %v\n", sys.GOOS)
+		fmt.Printf("runtime.GOOS: %v\n", runtime.GOOS)
+		b, err := ioutil.ReadFile("/var/run/shutdown_signal") // linux
+
 		if err != nil {
-			panic(err)
+			log.Println("file doesn't exist, create one")
 		}
 		fmt.Printf("shutdown_signal: %s\n", string(b))
 
 		signal := []byte("true")
 		// err = ioutil.WriteFile("C:\\shutdown_signal", signal, 0644)
 		err = ioutil.WriteFile("/var/run/shutdown_signal", signal, 0644)
+
 		if err != nil {
 			panic(err)
 		}

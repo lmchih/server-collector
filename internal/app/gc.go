@@ -167,13 +167,15 @@ func BinaryRunCheck(c *YamlConf) {
 
 // ContainerRunCheck check github commit status
 func ContainerRunCheck(e *EnvVars) {
+	fmt.Println("ContainerRunCheck")
 	// fmt.Printf((e.accessToken))
-	days := lastCommitDays(e.accessToken, e.sourceOwner, e.sourceRepo)
+	// days := lastCommitDays(e.accessToken, e.sourceOwner, e.sourceRepo)
 
 	// if older than expiration, terminate the server.
-	if isUnused(days, e.unusedDays) {
-		terminate(e.targetServer)
-	}
+	// if isUnused(days, e.unusedDays) {
+	// 	terminate(e.targetServer)
+	// }
+	terminate(e.targetServer)
 }
 
 func isUnused(days int64, expiration int64) bool {

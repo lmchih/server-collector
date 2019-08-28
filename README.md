@@ -45,7 +45,7 @@ server-collector &
 
 ```sh
 # Linux/MacOS
-docker run -v /shutdown_signal:/var/run/shutdown_signal -e SOURCE_REPO=server-collector -idt --name=server-collector rickming/server-collector:0.0.1
+docker run -idt -v /var/run:/var/run --name=server-collector rickming/server-collector:0.0.2
 
 # Windows
 docker run -v C:\\shutdown_signal:/var/run/shutdown_signal -e SOURCE_REPO=server-collector -idt --name=server-collector rickming/server-collector:0.0.1

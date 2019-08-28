@@ -18,18 +18,19 @@ spec:
     spec:
       containers:
       - name: server-collector
-        image: rickming/server-collector:0.0.1
+        image: rickming/server-collector:0.0.3
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: server-collector-conf
         volumeMounts:
         - mountPath: /var/run
-          name: shutdown_signal
+          name: shutdown-signal
       volumes:
-      - name: shutdown_signal
-        projected:
-          defaultMode: 420
+      - name: shutdown-signal
+        hostPath:
+          path: /var/run
+          type: Directory
 ---
 apiVersion: v1
 data:
