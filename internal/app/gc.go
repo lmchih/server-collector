@@ -26,29 +26,33 @@ const (
 	SourceRepo = "server-collector"
 	// SourceBranch repo target branch (actually not used)
 	SourceBranch = "master"
+	// CheckFrequency how often of running check (in seconds)
+	CheckFrequency = 120
 	// UnusedDays the expiration days before the server going to be turn off
 	UnusedDays = 3
 )
 
 // YamlConf for the yaml format configuration file
 type YamlConf struct {
-	Version      string `yaml:"version"`
-	AccessToken  string `yaml:"accessToken"`
-	ServerIP     string `yaml:"serverIP"`
-	SourceOwner  string `yaml:"sourceOwner"`
-	SourceRepo   string `yaml:"sourceRepo"`
-	SourceBranch string `yaml:"sourceBranch"`
-	UnusedDays   int64  `yaml:"unusedDays"`
+	Version        string `yaml:"version"`
+	AccessToken    string `yaml:"accessToken"`
+	ServerIP       string `yaml:"serverIP"`
+	SourceOwner    string `yaml:"sourceOwner"`
+	SourceRepo     string `yaml:"sourceRepo"`
+	SourceBranch   string `yaml:"sourceBranch"`
+	CheckFrequency int64  `yaml:"checkFrequency"`
+	UnusedDays     int64  `yaml:"unusedDays"`
 }
 
 // EnvVars for the configuration passed from environment variables
 type EnvVars struct {
-	targetServer string
-	accessToken  string
-	sourceOwner  string
-	sourceRepo   string
-	sourceBranch string
-	unusedDays   int64
+	targetServer   string
+	accessToken    string
+	sourceOwner    string
+	sourceRepo     string
+	sourceBranch   string
+	checkFrequency int64
+	unusedDays     int64
 }
 
 // GetEnvs configuration is supposed to be injected from k8s ConfigMap or ducker run -e
@@ -59,6 +63,7 @@ func GetEnvs() (*EnvVars, error) {
 	log.Printf("SOURCE_OWNER=%s\n", os.Getenv("SOURCE_OWNER"))
 	log.Printf("SOURCE_REPO=%s\n", os.Getenv("SOURCE_REPO"))
 	log.Printf("SOURCE_BRANCH=%s\n", os.Getenv("SOURCE_BRANCH"))
+	log.Printf("CHECK_FREQUENCY=%s\n", os.Getenv("CHECK_FREQUENCY"))
 	log.Printf("UNUSED_DAYS=%s\n", os.Getenv("UNUSED_DAYS"))
 
 	envVars := EnvVars{}
@@ -84,7 +89,15 @@ func GetEnvs() (*EnvVars, error) {
 	if envVars.sourceBranch == "" {
 		envVars.sourceBranch = SourceBranch
 	}
-
+	if os.Getenv("CHECK_FREQUENCY") == "" {
+		envVars.checkFrequency = CheckFrequency
+	} else {
+		i, err := strconv.ParseInt(os.Getenv("CHECK_FREQUENCY"), 10, 64)
+		if err != nil {
+			panic(err)
+		}
+		envVars.checkFrequency = int64(i)
+	}
 	if os.Getenv("UNUSED_DAYS") == "" {
 		envVars.unusedDays = UnusedDays
 	} else {
@@ -127,7 +140,7 @@ func BinaryEntry() {
 	BinaryRunCheck(&c)
 
 	// Start to run the routine job
-	for range time.Tick(time.Duration(3) * time.Second) {
+	for range time.Tick(time.Duration(c.CheckFrequency) * time.Second) {
 		log.Println("Check Github last commit date")
 		BinaryRunCheck(&c)
 	}
@@ -145,7 +158,7 @@ func ContainerEntry() {
 	ContainerRunCheck(envs)
 
 	// Start to run the routine job
-	for range time.Tick(time.Duration(30) * time.Second) {
+	for range time.Tick(time.Duration(envs.checkFrequency) * time.Second) {
 		log.Println("Check Github last commit date")
 		ContainerRunCheck(envs)
 	}
@@ -167,15 +180,11 @@ func BinaryRunCheck(c *YamlConf) {
 
 // ContainerRunCheck check github commit status
 func ContainerRunCheck(e *EnvVars) {
-	fmt.Println("ContainerRunCheck")
-	// fmt.Printf((e.accessToken))
-	// days := lastCommitDays(e.accessToken, e.sourceOwner, e.sourceRepo)
-
+	days := lastCommitDays(e.accessToken, e.sourceOwner, e.sourceRepo)
 	// if older than expiration, terminate the server.
-	// if isUnused(days, e.unusedDays) {
-	// 	terminate(e.targetServer)
-	// }
-	terminate(e.targetServer)
+	if isUnused(days, e.unusedDays) {
+		terminate(e.targetServer)
+	}
 }
 
 func isUnused(days int64, expiration int64) bool {

@@ -12,35 +12,31 @@ import (
 // Container solution
 // The better solution for this is to update a mounted volume from inside the non-privileged
 // namespaces container, and have another listening process run as root outside the container
-// , to do the actual shutdown work at the host machine. This provides a secure nterface between
-// the conatainer and the host machine.
+// , to do the actual shutdown work at the host machine. This provides a secure interface between
+// the container and the host machine.
 func terminate(target string) {
 	fmt.Printf("target: %s\n", target)
 	if target == TargetServer {
 		// run locally
 		fmt.Println("Hey I am going to turn you off! Server.")
-		// b, err := ioutil.ReadFile("C:\\shutdown_signal") // windows
-
-		// fmt.Printf("sys.GOOS: %v\n", sys.GOOS)
 		fmt.Printf("runtime.GOOS: %v\n", runtime.GOOS)
 		b, err := ioutil.ReadFile("/var/run/shutdown_signal") // linux
 
 		if err != nil {
-			log.Println("file doesn't exist, create one")
+			log.Println("File doesn't exist, create it to write.")
 		}
 		fmt.Printf("shutdown_signal: %s\n", string(b))
 
 		signal := []byte("true")
-		// err = ioutil.WriteFile("C:\\shutdown_signal", signal, 0644)
 		err = ioutil.WriteFile("/var/run/shutdown_signal", signal, 0644)
 
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("successfully write signal to %s\n", string(signal))
+		fmt.Printf("Successfully write signal to %s\n", string(signal))
 	} else {
 		// TODO: turn off remote server
-		// cmd := exec.Command("ssh", "-t", "-t", "-p", "22", "{{hostip}}", "init 6")
+		// cmd := exec.Command("ssh", "-t", "-t", "-p", "{{port}}", "{{hostip}}", "init 6")
 		// out, err := cmd.CombinedOutput()
 		// if err != nil {
 		// 	log.Fatal(err)
@@ -58,9 +54,7 @@ func shutdownCommand() {
 	fmt.Println("Bye")
 	// shutdown locally
 	fmt.Println(runtime.GOOS)
-	cmd := exec.Command("ls", "-alh")
-	// cmd := exec.Command("init 6")
-	// cmd := exec.Command("shutdown", "-h", "now") // linux/darwin
+	cmd := exec.Command("shutdown", "-h", "now") // linux/darwin
 	// if runtime.GOOS == "windows" {
 	// 	cmd = exec.Command("shutdown", "/s")
 	// }
