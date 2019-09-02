@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -44,8 +45,8 @@ type YamlConf struct {
 	UnusedDays     int64  `yaml:"unusedDays"`
 }
 
-// EnvVars for the configuration passed from environment variables
-type EnvVars struct {
+// Envars for the configuration passed from environment variables
+type Envars struct {
 	targetServer   string
 	accessToken    string
 	sourceOwner    string
@@ -56,7 +57,7 @@ type EnvVars struct {
 }
 
 // GetEnvs configuration is supposed to be injected from k8s ConfigMap or ducker run -e
-func GetEnvs() (*EnvVars, error) {
+func GetEnvs() (*Envars, error) {
 	// default env from yaml
 	log.Printf("TARGET_SERVER=%s\n", os.Getenv("TARGET_SERVER"))
 	log.Printf("ACCESS_TOKEN=%s\n", os.Getenv("ACCESS_TOKEN"))
@@ -66,7 +67,7 @@ func GetEnvs() (*EnvVars, error) {
 	log.Printf("CHECK_FREQUENCY=%s\n", os.Getenv("CHECK_FREQUENCY"))
 	log.Printf("UNUSED_DAYS=%s\n", os.Getenv("UNUSED_DAYS"))
 
-	envVars := EnvVars{}
+	envVars := Envars{}
 	// if not getting any values from environment, fall back
 	// to default constant values
 	envVars.targetServer = os.Getenv("TARGET_SERVER")
@@ -128,12 +129,31 @@ func (c *YamlConf) getConf() *YamlConf {
 
 // BinaryEntry main handle method
 func BinaryEntry() {
+	var (
+		targetServer   = flag.String("target", "127.0.0.1", "The target server want to be monitored")
+		accessToken    = flag.String("token", "", "Your(organization)'s Github Personal Access Token")
+		sourceOwner    = flag.String("owner", "lmchih", "The Github repo owner")
+		sourceRepo     = flag.String("repo", "server-collector", "The Github repo name")
+		sourceBranch   = flag.String("branch", "master", "The Github repo branch")
+		checkFrequency = flag.Int64("check-freq", 120, "How often of running check (in seconds)")
+		unusedDays     = flag.Int64("unused-days", 3, "How long is considered unused")
+	)
+	flag.Parse()
+
+	fmt.Printf("targetServer: %v\n", *targetServer)
+	fmt.Printf("accessToken: %v\n", *accessToken)
+	fmt.Printf("sourceOwner: %v\n", *sourceOwner)
+	fmt.Printf("sourceRepo: %v\n", *sourceRepo)
+	fmt.Printf("sourceBranch: %v\n", *sourceBranch)
+	fmt.Printf("checkFrequency: %v\n", *checkFrequency)
+	fmt.Printf("unusedDays: %v\n", *unusedDays)
+
 	fmt.Println("Start server-collector")
 
 	var c YamlConf
 	c.getConf()
 
-	fmt.Println(c.Version)
+	// fmt.Println(c.Version)
 
 	// Run once first right before the routine
 	log.Println("Check Github last commit date")
@@ -172,16 +192,24 @@ func RunCheck(a interface{}) {
 // BinaryRunCheck check github commit status
 func BinaryRunCheck(c *YamlConf) {
 	// routinely check last commit date
-	var days = lastCommitDays(c.AccessToken, c.SourceOwner, c.SourceRepo)
+	var days = LastCommitDays(c.AccessToken, c.SourceOwner, c.SourceRepo)
+	if days == -1 {
+		log.Println("Cannot retrieve Github info.")
+		return
+	}
 	if isUnused(days, c.UnusedDays) {
 		shutdownCommand()
 	}
 }
 
 // ContainerRunCheck check github commit status
-func ContainerRunCheck(e *EnvVars) {
-	days := lastCommitDays(e.accessToken, e.sourceOwner, e.sourceRepo)
+func ContainerRunCheck(e *Envars) {
+	days := LastCommitDays(e.accessToken, e.sourceOwner, e.sourceRepo)
 	// if older than expiration, terminate the server.
+	if days == -1 {
+		log.Println("Cannot retrieve Github info.")
+		return
+	}
 	if isUnused(days, e.unusedDays) {
 		terminate(e.targetServer)
 	}

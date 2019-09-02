@@ -1,0 +1,458 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/lmchih/server-collector/gc.go (0.0%)</option>
+				
+				<option value="file1">github.com/lmchih/server-collector/github.go (85.0%)</option>
+				
+				<option value="file2">github.com/lmchih/server-collector/shutdown.go (9.1%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package collector
+
+import (
+        "flag"
+        "fmt"
+        "io/ioutil"
+        "log"
+        "os"
+        "strconv"
+        "time"
+
+        "gopkg.in/yaml.v2"
+)
+
+// NOTICE: For generic and decoupling purpose, you might always want to inject these from the
+// environment variables or some kinds of configuration yaml.
+// If any of them are not properly provided, fallback to default.
+const (
+        // TargetServer is assumed localhost
+        TargetServer = "127.0.0.1"
+        // AccessToken place your own(or organization) github Personal Access Token
+        // NOTICE: Make sure your are not pushing your token onto github if your repository is public
+        AccessToken = "8992518d8cda5290ba387739837588662d6806e4"
+        // SourceOwner github repo owner
+        SourceOwner = "lmchih"
+        // SourceRepo github repo name
+        SourceRepo = "server-collector"
+        // SourceBranch repo target branch (actually not used)
+        SourceBranch = "master"
+        // CheckFrequency how often of running check (in seconds)
+        CheckFrequency = 120
+        // UnusedDays the expiration days before the server going to be turn off
+        UnusedDays = 3
+)
+
+// YamlConf for the yaml format configuration file
+type YamlConf struct {
+        Version        string `yaml:"version"`
+        AccessToken    string `yaml:"accessToken"`
+        ServerIP       string `yaml:"serverIP"`
+        SourceOwner    string `yaml:"sourceOwner"`
+        SourceRepo     string `yaml:"sourceRepo"`
+        SourceBranch   string `yaml:"sourceBranch"`
+        CheckFrequency int64  `yaml:"checkFrequency"`
+        UnusedDays     int64  `yaml:"unusedDays"`
+}
+
+// Envars for the configuration passed from environment variables
+type Envars struct {
+        targetServer   string
+        accessToken    string
+        sourceOwner    string
+        sourceRepo     string
+        sourceBranch   string
+        checkFrequency int64
+        unusedDays     int64
+}
+
+// GetEnvs configuration is supposed to be injected from k8s ConfigMap or ducker run -e
+func GetEnvs() (*Envars, error) <span class="cov0" title="0">{
+        // default env from yaml
+        log.Printf("TARGET_SERVER=%s\n", os.Getenv("TARGET_SERVER"))
+        log.Printf("ACCESS_TOKEN=%s\n", os.Getenv("ACCESS_TOKEN"))
+        log.Printf("SOURCE_OWNER=%s\n", os.Getenv("SOURCE_OWNER"))
+        log.Printf("SOURCE_REPO=%s\n", os.Getenv("SOURCE_REPO"))
+        log.Printf("SOURCE_BRANCH=%s\n", os.Getenv("SOURCE_BRANCH"))
+        log.Printf("CHECK_FREQUENCY=%s\n", os.Getenv("CHECK_FREQUENCY"))
+        log.Printf("UNUSED_DAYS=%s\n", os.Getenv("UNUSED_DAYS"))
+
+        envVars := Envars{}
+        // if not getting any values from environment, fall back
+        // to default constant values
+        envVars.targetServer = os.Getenv("TARGET_SERVER")
+        if envVars.targetServer == "" </span><span class="cov0" title="0">{
+                envVars.targetServer = TargetServer
+        }</span>
+        <span class="cov0" title="0">envVars.accessToken = os.Getenv("ACCESS_TOKEN")
+        if envVars.accessToken == "" </span><span class="cov0" title="0">{
+                envVars.accessToken = AccessToken
+        }</span>
+        <span class="cov0" title="0">envVars.sourceOwner = os.Getenv("SOURCE_OWNER")
+        if envVars.sourceOwner == "" </span><span class="cov0" title="0">{
+                envVars.sourceOwner = SourceOwner
+        }</span>
+        <span class="cov0" title="0">envVars.sourceRepo = os.Getenv("SOURCE_REPO")
+        if envVars.sourceRepo == "" </span><span class="cov0" title="0">{
+                envVars.sourceRepo = SourceRepo
+        }</span>
+        <span class="cov0" title="0">envVars.sourceBranch = os.Getenv("SOURCE_BRANCH")
+        if envVars.sourceBranch == "" </span><span class="cov0" title="0">{
+                envVars.sourceBranch = SourceBranch
+        }</span>
+        <span class="cov0" title="0">if os.Getenv("CHECK_FREQUENCY") == "" </span><span class="cov0" title="0">{
+                envVars.checkFrequency = CheckFrequency
+        }</span> else<span class="cov0" title="0"> {
+                i, err := strconv.ParseInt(os.Getenv("CHECK_FREQUENCY"), 10, 64)
+                if err != nil </span><span class="cov0" title="0">{
+                        panic(err)</span>
+                }
+                <span class="cov0" title="0">envVars.checkFrequency = int64(i)</span>
+        }
+        <span class="cov0" title="0">if os.Getenv("UNUSED_DAYS") == "" </span><span class="cov0" title="0">{
+                envVars.unusedDays = UnusedDays
+        }</span> else<span class="cov0" title="0"> {
+                i, err := strconv.ParseInt(os.Getenv("UNUSED_DAYS"), 10, 64)
+                if err != nil </span><span class="cov0" title="0">{
+                        panic(err)</span>
+                }
+                <span class="cov0" title="0">envVars.unusedDays = int64(i)</span>
+        }
+
+        <span class="cov0" title="0">return &amp;envVars, nil</span>
+}
+
+// Read configuration from the user editted yaml file
+func (c *YamlConf) getConf() *YamlConf <span class="cov0" title="0">{
+        yamlFile, err := ioutil.ReadFile("deployments/config.yaml")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("yamlFile.Get err #%v\n", err)
+        }</span>
+
+        <span class="cov0" title="0">err = yaml.Unmarshal(yamlFile, &amp;c)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Unmarshal err: %v\n", err)
+        }</span>
+        <span class="cov0" title="0">fmt.Printf("%v\n", c)
+        return c</span>
+}
+
+// BinaryEntry main handle method
+func BinaryEntry() <span class="cov0" title="0">{
+        var (
+                targetServer   = flag.String("target", "127.0.0.1", "The target server want to be monitored")
+                accessToken    = flag.String("token", "", "Your(organization)'s Github Personal Access Token")
+                sourceOwner    = flag.String("owner", "lmchih", "The Github repo owner")
+                sourceRepo     = flag.String("repo", "server-collector", "The Github repo name")
+                sourceBranch   = flag.String("branch", "master", "The Github repo branch")
+                checkFrequency = flag.Int64("check-freq", 120, "How often of running check (in seconds)")
+                unusedDays     = flag.Int64("unused-days", 3, "How long is considered unused")
+        )
+        flag.Parse()
+
+        fmt.Printf("targetServer: %v\n", *targetServer)
+        fmt.Printf("accessToken: %v\n", *accessToken)
+        fmt.Printf("sourceOwner: %v\n", *sourceOwner)
+        fmt.Printf("sourceRepo: %v\n", *sourceRepo)
+        fmt.Printf("sourceBranch: %v\n", *sourceBranch)
+        fmt.Printf("checkFrequency: %v\n", *checkFrequency)
+        fmt.Printf("unusedDays: %v\n", *unusedDays)
+
+        fmt.Println("Start server-collector")
+
+        var c YamlConf
+        c.getConf()
+
+        // fmt.Println(c.Version)
+
+        // Run once first right before the routine
+        log.Println("Check Github last commit date")
+        BinaryRunCheck(&amp;c)
+
+        // Start to run the routine job
+        for range time.Tick(time.Duration(c.CheckFrequency) * time.Second) </span><span class="cov0" title="0">{
+                log.Println("Check Github last commit date")
+                BinaryRunCheck(&amp;c)
+        }</span>
+}
+
+// ContainerEntry main handle method
+func ContainerEntry() <span class="cov0" title="0">{
+        envs, err := GetEnvs()
+        log.Printf("envs: %v, err: %v", envs, err)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal(err)
+        }</span>
+
+        <span class="cov0" title="0">log.Println("Check Github last commit date")
+        ContainerRunCheck(envs)
+
+        // Start to run the routine job
+        for range time.Tick(time.Duration(envs.checkFrequency) * time.Second) </span><span class="cov0" title="0">{
+                log.Println("Check Github last commit date")
+                ContainerRunCheck(envs)
+        }</span>
+}
+
+// RunCheck check github commit days
+func RunCheck(a interface{}) {<span class="cov0" title="0">
+        // TODO:
+}</span>
+
+// BinaryRunCheck check github commit status
+func BinaryRunCheck(c *YamlConf) <span class="cov0" title="0">{
+        // routinely check last commit date
+        var days = LastCommitDays(c.AccessToken, c.SourceOwner, c.SourceRepo)
+        if days == -1 </span><span class="cov0" title="0">{
+                log.Println("Cannot retrieve Github info.")
+                return
+        }</span>
+        <span class="cov0" title="0">if isUnused(days, c.UnusedDays) </span><span class="cov0" title="0">{
+                shutdownCommand()
+        }</span>
+}
+
+// ContainerRunCheck check github commit status
+func ContainerRunCheck(e *Envars) <span class="cov0" title="0">{
+        days := LastCommitDays(e.accessToken, e.sourceOwner, e.sourceRepo)
+        // if older than expiration, terminate the server.
+        if days == -1 </span><span class="cov0" title="0">{
+                log.Println("Cannot retrieve Github info.")
+                return
+        }</span>
+        <span class="cov0" title="0">if isUnused(days, e.unusedDays) </span><span class="cov0" title="0">{
+                terminate(e.targetServer)
+        }</span>
+}
+
+func isUnused(days int64, expiration int64) bool <span class="cov0" title="0">{
+        if days &gt;= expiration </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        <span class="cov0" title="0">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package collector
+
+import (
+        "fmt"
+        "time"
+
+        "context"
+
+        "github.com/google/go-github/v28/github" // with go modules enabled
+        "golang.org/x/oauth2"
+)
+
+var (
+        client *github.Client
+        ctx    = context.Background()
+)
+
+func GetClient(token string) *github.Client <span class="cov8" title="1">{
+        // get go-github client
+        ctx = context.Background()
+        ts := oauth2.StaticTokenSource(
+                &amp;oauth2.Token{AccessToken: token},
+        )
+        tc := oauth2.NewClient(ctx, ts)
+
+        client = github.NewClient(tc)
+        return client
+}</span>
+
+// LastCommitDays Get how many days till today the last commit
+// was pushed onto Github. If error caused, return -1
+func LastCommitDays(token string, owner string, repo string) int64 <span class="cov8" title="1">{
+        if client == nil </span><span class="cov0" title="0">{
+                client = GetClient(token)
+        }</span>
+
+        <span class="cov8" title="1">commitInfo, _, err := client.Repositories.ListCommits(ctx, owner, repo, nil)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("Problem in commit information %v\n", err)
+                // os.Exit(1)
+                return -1
+        }</span>
+
+        // get the latest commit
+        <span class="cov8" title="1">var lastCommit = commitInfo[0]
+        var lastCommitDate = *lastCommit.Commit.Committer.Date
+
+        // compare to commit time with now
+        now := time.Now().UTC()
+        fmt.Printf("Now: %v\n", now)
+        since := time.Since(lastCommitDate)
+        fmt.Printf("Since: %v\n", since)
+        // convert since to days
+        days := int64(since.Hours() / 24)
+        fmt.Printf("last commmit was %d days ago.\n", days)
+        return days</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package collector
+
+import (
+        "fmt"
+        "io/ioutil"
+        "log"
+        "os/exec"
+        "runtime"
+        "time"
+)
+
+// Container solution
+// The better solution for this is to update a mounted volume from inside the non-privileged
+// namespaces container, and have another listening process run as root outside the container
+// , to do the actual shutdown work at the host machine. This provides a secure interface between
+// the container and the host machine.
+func terminate(target string) <span class="cov8" title="1">{
+        fmt.Printf("target: %s\n", target)
+        if target == TargetServer </span><span class="cov0" title="0">{
+                // run locally
+                fmt.Println("Hey I am going to turn you off! Server.")
+                fmt.Printf("runtime.GOOS: %v\n", runtime.GOOS)
+                b, err := ioutil.ReadFile("/var/run/shutdown_signal") // linux
+
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("File doesn't exist, create it to write.")
+                }</span>
+                <span class="cov0" title="0">fmt.Printf("shutdown_signal: %s\n", string(b))
+
+                signal := []byte("true")
+                err = ioutil.WriteFile("/var/run/shutdown_signal", signal, 0644)
+
+                if err != nil </span><span class="cov0" title="0">{
+                        panic(err)</span>
+                }
+                <span class="cov0" title="0">fmt.Printf("Successfully write signal to %s\n", string(signal))</span>
+        } else <span class="cov8" title="1">{
+                // TODO: turn off remote server
+                // cmd := exec.Command("ssh", "-t", "-t", "-p", "{{port}}", "{{hostip}}", "init 6")
+                // out, err := cmd.CombinedOutput()
+                // if err != nil {
+                //         log.Fatal(err)
+                // }
+
+                // fmt.Printf("cmd Output:%v", string(out))
+        }</span>
+}
+
+// Binary solution
+func shutdownCommand() <span class="cov0" title="0">{
+
+        fmt.Println("The computer is going to be shutdown in 5 seconds .....")
+        time.Sleep(time.Duration(5) * time.Second)
+        fmt.Println("Bye")
+        // shutdown locally
+        fmt.Println(runtime.GOOS)
+        cmd := exec.Command("shutdown", "-h", "now") // linux/darwin
+        // if runtime.GOOS == "windows" {
+        //         cmd = exec.Command("shutdown", "/s")
+        // }
+
+        out, err := cmd.CombinedOutput()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal(err)
+        }</span>
+
+        <span class="cov0" title="0">fmt.Printf("cmd Output:%v", string(out))</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
