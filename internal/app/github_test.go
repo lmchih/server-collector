@@ -3,12 +3,14 @@ package collector
 import (
 	"fmt"
 	"testing"
+
+	. "github.com/lmchih/server-collector/internal/app"
 )
 
 func TestGetClient(t *testing.T) {
 	var token = ""
 	client := GetClient(token)
-	
+
 	if client == nil {
 		t.Error("FAILED. Not able to get Github client\n")
 	} else {

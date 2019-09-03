@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/google/go-github/v28 v28.0.0
+	github.com/pborman/getopt v0.0.0-20190409184431-ee0cd42419d3
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect

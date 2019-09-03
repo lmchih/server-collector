@@ -6,9 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 
+	"github.com/pborman/getopt"
 	"gopkg.in/yaml.v2"
 )
 
@@ -20,7 +22,7 @@ const (
 	TargetServer = "127.0.0.1"
 	// AccessToken place your own(or organization) github Personal Access Token
 	// NOTICE: Make sure your are not pushing your token onto github if your repository is public
-	AccessToken = "8992518d8cda5290ba387739837588662d6806e4"
+	AccessToken = "495fe0558bb01d3635bfa9e93f5ebecc83f85387"
 	// SourceOwner github repo owner
 	SourceOwner = "lmchih"
 	// SourceRepo github repo name
@@ -31,6 +33,16 @@ const (
 	CheckFrequency = 120
 	// UnusedDays the expiration days before the server going to be turn off
 	UnusedDays = 3
+)
+
+var (
+	targetServer   = flag.String("target", "127.0.0.1", "The target server want to be monitored")
+	accessToken    = flag.String("token", "", "Your(organization)'s Github Personal Access Token")
+	sourceOwner    = flag.String("owner", "lmchih", "The Github repo owner")
+	sourceRepo     = flag.String("repo", "server-collector", "The Github repo name")
+	sourceBranch   = flag.String("branch", "master", "The Github repo branch")
+	checkFrequency = flag.Int64("check-freq", 120, "How often of running check (in seconds)")
+	unusedDays     = flag.Int64("unused-days", 3, "How long is considered unused")
 )
 
 // YamlConf for the yaml format configuration file
@@ -45,6 +57,17 @@ type YamlConf struct {
 	UnusedDays     int64  `yaml:"unusedDays"`
 }
 
+// Options the standard input option
+type Options struct {
+	IP         string
+	Token      string
+	Owner      string
+	Repo       string
+	Branch     string
+	CheckFreq  int64
+	UnusedDays int64
+}
+
 // Envars for the configuration passed from environment variables
 type Envars struct {
 	targetServer   string
@@ -54,6 +77,21 @@ type Envars struct {
 	sourceBranch   string
 	checkFrequency int64
 	unusedDays     int64
+}
+
+func configToOption(yaml *YamlConf) *Options {
+	v := reflect.ValueOf(*yaml)
+	options := Options{
+		IP:         v.FieldByName("ServerIP").String(),
+		Token:      v.FieldByName("AccessToken").String(),
+		Owner:      v.FieldByName("SourceOwner").String(),
+		Repo:       v.FieldByName("SourceRepo").String(),
+		Branch:     v.FieldByName("SourceBranch").String(),
+		CheckFreq:  v.FieldByName("CheckFrequency").Int(),
+		UnusedDays: v.FieldByName("UnusedDays").Int(),
+	}
+
+	return &options
 }
 
 // GetEnvs configuration is supposed to be injected from k8s ConfigMap or ducker run -e
@@ -113,8 +151,8 @@ func GetEnvs() (*Envars, error) {
 }
 
 // Read configuration from the user editted yaml file
-func (c *YamlConf) getConf() *YamlConf {
-	yamlFile, err := ioutil.ReadFile("deployments/config.yaml")
+func (c *YamlConf) getConf(yamlPath string) *YamlConf {
+	yamlFile, err := ioutil.ReadFile(yamlPath)
 	if err != nil {
 		log.Printf("yamlFile.Get err #%v\n", err)
 	}
@@ -127,42 +165,88 @@ func (c *YamlConf) getConf() *YamlConf {
 	return c
 }
 
-// BinaryEntry main handle method
+// BinaryEntry binary main handler
 func BinaryEntry() {
-	var (
-		targetServer   = flag.String("target", "127.0.0.1", "The target server want to be monitored")
-		accessToken    = flag.String("token", "", "Your(organization)'s Github Personal Access Token")
-		sourceOwner    = flag.String("owner", "lmchih", "The Github repo owner")
-		sourceRepo     = flag.String("repo", "server-collector", "The Github repo name")
-		sourceBranch   = flag.String("branch", "master", "The Github repo branch")
-		checkFrequency = flag.Int64("check-freq", 120, "How often of running check (in seconds)")
-		unusedDays     = flag.Int64("unused-days", 3, "How long is considered unused")
-	)
-	flag.Parse()
+	optYaml := getopt.StringLong("from-file", 'f', "", "The path of configuration file. Support yaml only")
+	optHelp := getopt.BoolLong("help", 'h', "Help")
+	optTarget := getopt.StringLong("ip", 'i', "127.0.0.1", "Support localhost only")
+	optToken := getopt.StringLong("token", 't', "", "Your personal/organization Github Personal Access Token")
+	optOwner := getopt.StringLong("owner", 'o', "lmchih", "Github repo owner: https://github.com/{owner}/{repo}")
+	optRepo := getopt.StringLong("repo", 'r', "server-collector", "Github repo name: https://github.com/{owner}/{repo}")
+	optBranch := getopt.StringLong("branch", 'b', "master", "Github repo branch (Support master only)")
+	optCheck := getopt.Int64('c', 120, "Seconds between every check")
+	optUnused := getopt.Int64Long("unused-days", 'u', 3, "Days considered unused")
 
-	fmt.Printf("targetServer: %v\n", *targetServer)
-	fmt.Printf("accessToken: %v\n", *accessToken)
-	fmt.Printf("sourceOwner: %v\n", *sourceOwner)
-	fmt.Printf("sourceRepo: %v\n", *sourceRepo)
-	fmt.Printf("sourceBranch: %v\n", *sourceBranch)
-	fmt.Printf("checkFrequency: %v\n", *checkFrequency)
-	fmt.Printf("unusedDays: %v\n", *unusedDays)
+	getopt.Parse()
 
+	if *optYaml != "" {
+		fmt.Printf("Yaml: %v\n", *optYaml)
+		BinaryYamlEntry(*optYaml)
+		return
+	}
+
+	if *optHelp {
+		getopt.Usage()
+		os.Exit(0)
+	}
+
+	if *optToken == "" {
+		fmt.Println("Github Access Token is required.")
+		getopt.Usage()
+		os.Exit(0)
+	}
+
+	fmt.Println("IP: " + *optTarget)
+	fmt.Println("Token: " + *optToken)
+	fmt.Println("Owner: " + *optOwner)
+	fmt.Println("Repo: " + *optRepo)
+	fmt.Println("Branch: " + *optBranch)
+	fmt.Printf("Check Frequency: %d\n", *optCheck)
+	fmt.Printf("Unused Days: %d\n", *optUnused)
+
+	options := Options{
+		IP:         *optTarget,
+		Token:      *optToken,
+		Owner:      *optOwner,
+		Repo:       *optRepo,
+		Branch:     *optBranch,
+		CheckFreq:  *optCheck,
+		UnusedDays: *optUnused,
+	}
+
+	BinaryOptEntry(&options)
+}
+
+// BinaryOptEntry run with options
+func BinaryOptEntry(opts *Options) {
+	log.Println("Check Github last commit date")
+	BinaryRunCheck(opts)
+
+	// Start to run the routine job
+	for range time.Tick(time.Duration(opts.CheckFreq) * time.Second) {
+		log.Println("Check Github last commit date")
+		BinaryRunCheck(opts)
+	}
+}
+
+// BinaryYamlEntry run with yaml file
+func BinaryYamlEntry(yamlPath string) {
 	fmt.Println("Start server-collector")
 
 	var c YamlConf
-	c.getConf()
+	c.getConf(yamlPath)
 
 	// fmt.Println(c.Version)
 
 	// Run once first right before the routine
 	log.Println("Check Github last commit date")
-	BinaryRunCheck(&c)
+	options := configToOption(&c)
+	BinaryRunCheck(options)
 
 	// Start to run the routine job
-	for range time.Tick(time.Duration(c.CheckFrequency) * time.Second) {
+	for range time.Tick(time.Duration(options.CheckFreq) * time.Second) {
 		log.Println("Check Github last commit date")
-		BinaryRunCheck(&c)
+		BinaryRunCheck(options)
 	}
 }
 
@@ -190,14 +274,14 @@ func RunCheck(a interface{}) {
 }
 
 // BinaryRunCheck check github commit status
-func BinaryRunCheck(c *YamlConf) {
+func BinaryRunCheck(o *Options) {
 	// routinely check last commit date
-	var days = LastCommitDays(c.AccessToken, c.SourceOwner, c.SourceRepo)
+	var days = LastCommitDays(o.Token, o.Owner, o.Repo)
 	if days == -1 {
 		log.Println("Cannot retrieve Github info.")
 		return
 	}
-	if isUnused(days, c.UnusedDays) {
+	if isUnused(days, o.UnusedDays) {
 		shutdownCommand()
 	}
 }

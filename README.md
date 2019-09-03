@@ -1,48 +1,78 @@
 # server-collector
 
-An application smartly turns off your unused machines. On those feature servers(especially for those internal testing of features), the app constantly(for like every couple minute, configurable) checking the commit date from your Github repo. If the commit was not updated for long time, **server-collector** marks your server as unused and then turns it off.
+**server-collector** smartly turns off your unused machines. Deployed on top of feature servers(especially those internal testing of features), the application constantly(configurable) checks the latest commit date of your Github repository. If the repository was inactive for long time, **server-collector** marks your servers as unused and turns them off.
 
 ## Go 1.11 Modules
 
-Please upgrade your go version to v1.11+ so that you can use go module. You have to set `GO111MODULE=on`. For more information, please see [golang/go](https://github.com/golang/go/wiki/Modules)
+Please upgrade your **go** version to **v1.11+** so that you can use go module. You have to set `GO111MODULE=on`. For more information, please see [golang/go](https://github.com/golang/go/wiki/Modules)
 
 ```sh
 export GO111MODULE=on
 ```
 
-## Usage
-
 ## Run as binary
 
-Before running the program, you will need to complete the configuration yaml file. Put your Github information as the following format: `https://github.com/{{sourceOwner}}/{{sourceRepo}}` and decide your checking frequency and the commit expirations.
+### Usage
 
-```yaml
-# image version
-version: 0.0.3
-# your personal/organization access token
-accessToken: ""
-#localhost
-serverIP: 127.0.0.1
-# https://github.com/{{sourceOwner}}/{{sourceRepo}}
-sourceOwner: lmchih
-# https://github.com/{{sourceOwner}}/{{sourceRepo}}
-sourceRepo: server-collector
-# not used so far
-sourceBranch: master
-# how often (in seconds) the program runs a check
-checkFrequency: 120
-# your repo non-active days
-unusedDays: 3
+```sh
+$ server-collector -h
+
+Usage: main [-h] [-b value] [-c value] [-f value] [-i value] [-o value] [-r value] [-t value] [-u value] [parameters ...]
+ -b, --branch=value
+                    Github repo branch (Support master only)
+ -c value           Seconds between every check
+ -f, --from-file=value
+                    The path of configuration file. Support yaml only
+ -h, --help         Help
+ -i, --ip=value     Support localhost only
+ -o, --owner=value  Github repo owner: https://github.com/{owner}/{repo}
+ -r, --repo=value   Github repo name: https://github.com/{owner}/{repo}
+ -t, --token=value  Your personal/organization Github Personal Access Token
+ -u, --unused-days=value
+                    Days considered unused
 ```
+
+### Background
 
 ```sh
 cp ./server-collector /usr/local/bin/
 server-collector &
 ```
 
+### Configuration file(optional)
+
+You may want to create a yaml file with the following format. Use the option `--from-file=<YOUR_YAML_PATH>` to pass the file in.
+
+```yaml
+# Application version
+version: 0.0.3
+# Your personal/organization access token
+accessToken: ""
+# Support localhost only
+serverIP: 127.0.0.1
+# https://github.com/{sourceOwner}/{sourceRepo}
+sourceOwner: lmchih
+# https://github.com/{sourceOwner}/{sourceRepo}
+sourceRepo: server-collector
+# Support master branch only
+sourceBranch: master
+# Seconds between every check
+checkFrequency: 120
+# Inactive days for your monitored repository
+unusedDays: 3
+```
+
+### Github Access Token
+
+Github access token is **required**. Run with the option `--token=value` or `-t value`
+
+```sh
+server-collector --token=mygithubaccesstoken
+```
+
 ## Run with container
 
-### Step 1: start the container
+### Step 1: Start the container
 
 ```sh
 # Docker
@@ -55,7 +85,7 @@ deployment.extensions "server-collector" created
 configmap "server-collector-conf" created
 ```
 
-### Step 2: start the listening process
+### Step 2: Start the listening process at the host machine
 
 ```sh
 cd scripts
@@ -64,12 +94,12 @@ chmod +x check-shutdown-signal.sh
 # Add sudo before sh command if you are not superuser
 sh ./check-shutdown-signal.sh &
 
-# NOTE: If you are in Kubernetes cluster, run this script at the worker where you pod is located.
+# NOTE: In Kubernetes cluster, run this script at the worker where your pod is located.
 ```
 
 ## Build
 
-### binary
+### Binary
 
 Executes the following commands right under the root directory of this repository:
 
@@ -79,7 +109,7 @@ go build -o server-collector cmd/server-collector/binary
 
 This generates an executable named `server-collector`
 
-### image
+### Docker image
 
 To build a Docker image, use Dockerfile at the `build/package/` directory:
 

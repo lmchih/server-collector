@@ -15,6 +15,7 @@ var (
 	ctx    = context.Background()
 )
 
+// GetClient Get github API client
 func GetClient(token string) *github.Client {
 	// get go-github client
 	ctx = context.Background()
