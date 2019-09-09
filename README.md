@@ -10,7 +10,7 @@ Please upgrade your **go** version to **v1.11+** so that you can use go module. 
 export GO111MODULE=on
 ```
 
-## Run as binary
+## Executable
 
 ### Usage
 
@@ -32,16 +32,19 @@ Usage: main [-h] [-b value] [-c value] [-f value] [-i value] [-o value] [-r valu
                     Days considered unused
 ```
 
-### Background
+### Github Access Token
+
+Github access token is **required**. Run with the option `--token=value` or `-t value`
 
 ```sh
-cp ./server-collector /usr/local/bin/
-server-collector &
+server-collector --token=mygithubaccesstoken
 ```
 
-### Configuration file(optional)
+### Configuration
 
-You may want to create a yaml file with the following format. Use the option `--from-file=<YOUR_YAML_PATH>` to pass the file in.
+#### configuration file(optional)
+
+You may want to create a yaml file with the following format. Use the option `--from-file=<YOUR_YAML_PATH>` to pass the file in. (reference: `./configs/config.yaml`)
 
 ```yaml
 # Application version
@@ -62,21 +65,38 @@ checkFrequency: 120
 unusedDays: 3
 ```
 
-### Github Access Token
-
-Github access token is **required**. Run with the option `--token=value` or `-t value`
+### Runs at background
 
 ```sh
-server-collector --token=mygithubaccesstoken
+cp ./server-collector /usr/local/bin/
+server-collector &
 ```
 
 ## Run with container
 
 ### Step 1: Start the container
 
+#### Environment Variables
+
+| key             | type   | example value                            | description                                   |
+| --------------- | ------ | ---------------------------------------- | --------------------------------------------- |
+| TARGET_SERVER   | string | 127.0.0.1                                | target server IP: support localhost only      |
+| ACCESS_TOKEN    | string | 495fe0558bb01d3635bfa9e93f5ebecc83f85387 | Github access token                           |
+| SOURCE_OWNER    | string | lmchih                                   | https://github.com/{sourceOwner}/{sourceRepo} |
+| SOURCE_REPO     | string | server-collector                         | https://github.com/{sourceOwner}/{sourceRepo} |
+| SOURCE_BRANCH   | string | master                                   | Support master branch only                    |
+| CHECK_FREQUENCY | int64  | 120                                      | Seconds between every check                   |
+| UNUSED_DAYS     | int64  | 3                                        | Inactive days for your monitored repository   |
+
 ```sh
-# Docker
-docker run -idt -v /var/run:/var/run rickming/server-collector:0.0.3
+# Docker (pass environment variables with -e flag)
+docker run -idt -v /var/run:/var/run \
+-e ACCESS_TOKEN={yourgithubaccesstoken} \
+-e SOURCE_OWNER={repo_owner} \
+-e SOURCE_REPO={repo_name} \
+-e CHECK_FREQUENCY=120 \
+-e UNUSED_DAYS=3  \
+rickming/server-collector:0.0.4
 
 # Kubernetes
 cd deployments
@@ -94,7 +114,7 @@ chmod +x check-shutdown-signal.sh
 # Add sudo before sh command if you are not superuser
 sh ./check-shutdown-signal.sh &
 
-# NOTE: In Kubernetes cluster, run this script at the worker where your pod is located.
+# NOTICE: In Kubernetes cluster, run the script at the worker node where your pod is located.
 ```
 
 ## Build
@@ -104,7 +124,7 @@ sh ./check-shutdown-signal.sh &
 Executes the following commands right under the root directory of this repository:
 
 ```sh
-go build -o server-collector cmd/server-collector/binary
+go build -o server-collector cmd/server-collector/binary/main.go
 ```
 
 This generates an executable named `server-collector`

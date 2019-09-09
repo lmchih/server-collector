@@ -16,7 +16,7 @@ import (
 // the container and the host machine.
 func terminate(target string) {
 	fmt.Printf("target: %s\n", target)
-	if target == TargetServer {
+	if target == TargetServer || target == "localhost" {
 		// run locally
 		fmt.Println("Hey I am going to turn you off! Server.")
 		fmt.Printf("runtime.GOOS: %v\n", runtime.GOOS)

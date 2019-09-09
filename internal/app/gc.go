@@ -105,49 +105,49 @@ func GetEnvs() (*Envars, error) {
 	log.Printf("CHECK_FREQUENCY=%s\n", os.Getenv("CHECK_FREQUENCY"))
 	log.Printf("UNUSED_DAYS=%s\n", os.Getenv("UNUSED_DAYS"))
 
-	envVars := Envars{}
+	envars := Envars{}
 	// if not getting any values from environment, fall back
 	// to default constant values
-	envVars.targetServer = os.Getenv("TARGET_SERVER")
-	if envVars.targetServer == "" {
-		envVars.targetServer = TargetServer
+	envars.targetServer = os.Getenv("TARGET_SERVER")
+	if envars.targetServer == "" {
+		envars.targetServer = TargetServer
 	}
-	envVars.accessToken = os.Getenv("ACCESS_TOKEN")
-	if envVars.accessToken == "" {
-		envVars.accessToken = AccessToken
+	envars.accessToken = os.Getenv("ACCESS_TOKEN")
+	if envars.accessToken == "" {
+		envars.accessToken = AccessToken
 	}
-	envVars.sourceOwner = os.Getenv("SOURCE_OWNER")
-	if envVars.sourceOwner == "" {
-		envVars.sourceOwner = SourceOwner
+	envars.sourceOwner = os.Getenv("SOURCE_OWNER")
+	if envars.sourceOwner == "" {
+		envars.sourceOwner = SourceOwner
 	}
-	envVars.sourceRepo = os.Getenv("SOURCE_REPO")
-	if envVars.sourceRepo == "" {
-		envVars.sourceRepo = SourceRepo
+	envars.sourceRepo = os.Getenv("SOURCE_REPO")
+	if envars.sourceRepo == "" {
+		envars.sourceRepo = SourceRepo
 	}
-	envVars.sourceBranch = os.Getenv("SOURCE_BRANCH")
-	if envVars.sourceBranch == "" {
-		envVars.sourceBranch = SourceBranch
+	envars.sourceBranch = os.Getenv("SOURCE_BRANCH")
+	if envars.sourceBranch == "" {
+		envars.sourceBranch = SourceBranch
 	}
 	if os.Getenv("CHECK_FREQUENCY") == "" {
-		envVars.checkFrequency = CheckFrequency
+		envars.checkFrequency = CheckFrequency
 	} else {
 		i, err := strconv.ParseInt(os.Getenv("CHECK_FREQUENCY"), 10, 64)
 		if err != nil {
 			panic(err)
 		}
-		envVars.checkFrequency = int64(i)
+		envars.checkFrequency = int64(i)
 	}
 	if os.Getenv("UNUSED_DAYS") == "" {
-		envVars.unusedDays = UnusedDays
+		envars.unusedDays = UnusedDays
 	} else {
 		i, err := strconv.ParseInt(os.Getenv("UNUSED_DAYS"), 10, 64)
 		if err != nil {
 			panic(err)
 		}
-		envVars.unusedDays = int64(i)
+		envars.unusedDays = int64(i)
 	}
 
-	return &envVars, nil
+	return &envars, nil
 }
 
 // Read configuration from the user editted yaml file

@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: server-collector
-        image: rickming/server-collector:0.0.3
+        image: rickming/server-collector:0.0.4
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
@@ -35,10 +35,11 @@ spec:
 apiVersion: v1
 data:
   TARGET_SERVER: "127.0.0.1"
-  ACCESS_TOKEN: "8992518d8cda5290ba387739837588662d6806e4"
+  ACCESS_TOKEN: "495fe0558bb01d3635bfa9e93f5ebecc83f85387"
   SOURCE_OWNER: "lmchih"
   SOURCE_REPO: "server-collector"
   SOURCE_BRANCH: "master"
+  CHECK_FREQUENCY: "120"
   UNUSED_DAYS: "3"
 kind: ConfigMap
 metadata:
