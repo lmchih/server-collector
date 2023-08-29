@@ -81,8 +81,8 @@ server-collector &
 | key             | type   | example value                            | description                                   |
 | --------------- | ------ | ---------------------------------------- | --------------------------------------------- |
 | TARGET_SERVER   | string | 127.0.0.1                                | target server IP: support localhost only      |
-| ACCESS_TOKEN    | string | 495fe0558bb01d3635bfa9e93f5ebecc83f85387 | Github access token                           |
-| SOURCE_OWNER    | string | lmchih                                   | https://github.com/{sourceOwner}/{sourceRepo} |
+| ACCESS_TOKEN    | string | {YOUR_PERSONAL_ACCESS_TOKEN}             | Github access token                           |
+| SOURCE_OWNER    | string | {YOUR_GITHUB_USERNAME}                   | https://github.com/{sourceOwner}/{sourceRepo} |
 | SOURCE_REPO     | string | server-collector                         | https://github.com/{sourceOwner}/{sourceRepo} |
 | SOURCE_BRANCH   | string | master                                   | Support master branch only                    |
 | CHECK_FREQUENCY | int64  | 120                                      | Seconds between every check                   |
